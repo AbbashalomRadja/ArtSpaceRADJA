@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -7,10 +7,12 @@ import {
   TextInput,
   Pressable,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
+import { getArtworks } from '../api/artworks';
+import { useIsFocused } from '@react-navigation/native';
 
-// Warna dan font yang digunakan
 const colors = {
   black: (o = 1) => `rgba(0, 0, 0, ${o})`,
   white: (o = 1) => `rgba(255, 255, 255, ${o})`,
@@ -24,43 +26,32 @@ const fontType = {
   'Pjs-SemiBold': 'Poppins-SemiBold',
 };
 
-// Data artwork statis
-const artworks = [
-  {
-    id: 1,
-    title: 'Sunset in Bali',
-    artist: 'Agung Rai',
-    image:
-      'https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?fit=crop&w=500&q=80',
-  },
-  {
-    id: 2,
-    title: 'Wayang Kulit',
-    artist: 'Slamet Raharjo',
-    image:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Dalang_cilik_di_Pasar_Malam_Semawis%2C_Semarang.jpg/800px-Dalang_cilik_di_Pasar_Malam_Semawis%2C_Semarang.jpg',
-  },
-  {
-    id: 3,
-    title: 'Batik Abstract',
-    artist: 'Yuniarti',
-    image:
-      'https://produkumkm.jemberkab.go.id/assets-new/uploads/produk/1688355752-batik-lukis-abstrak-kontemporer-bg7-1.jpg',
-  },
-  {
-    id: 4,
-    title: 'Sculpture of Dewata',
-    artist: 'Nyoman Nuarta',
-    image:
-      'https://assets.wikiwand.com/_next/image?url=https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Devata_and_Apsaras_Prambanan_01.jpg/1100px-Devata_and_Apsaras_Prambanan_01.jpg&w=828&q=70',
-  },
-];
-
-export default function HomeScreen({navigation}) {
+export default function HomeScreen({ navigation }) {
+  const [artworks, setArtworks] = useState([]);
   const [searchText, setSearchText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const isFocused = useIsFocused();
 
-  const filteredArtworks = artworks.filter(art =>
-    art.title.toLowerCase().includes(searchText.toLowerCase()),
+  const fetchArtworks = async () => {
+    try {
+      setLoading(true);
+      const data = await getArtworks();
+      setArtworks(data);
+    } catch (error) {
+      console.error('Error fetching artworks:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isFocused) {
+      fetchArtworks();
+    }
+  }, [isFocused]);
+
+  const filteredArtworks = artworks.filter((art) =>
+    art.title.toLowerCase().includes(searchText.toLowerCase())
   );
 
   return (
@@ -85,27 +76,37 @@ export default function HomeScreen({navigation}) {
 
       <Pressable
         style={styles.addButton}
-        onPress={() => navigation.navigate('Form')}>
+        onPress={() => navigation.navigate('Form')}
+      >
         <Text style={styles.addButtonText}>+ Tambah Data</Text>
       </Pressable>
 
-      <ScrollView style={styles.artList}>
-        {filteredArtworks.map(art => (
-          <Pressable
-            key={art.id}
-            onPress={() => navigation.navigate('Detail', {art})}>
-            <ArtCard title={art.title} artist={art.artist} image={art.image} />
-          </Pressable>
-        ))}
-      </ScrollView>
+      {loading ? (
+        <ActivityIndicator
+          color={colors.accent()}
+          size="large"
+          style={{ marginTop: 20 }}
+        />
+      ) : (
+        <ScrollView style={styles.artList}>
+          {filteredArtworks.map((art) => (
+            <Pressable
+              key={art.id}
+              onPress={() => navigation.navigate('Detail', { art })}
+            >
+              <ArtCard title={art.title} artist={art.artist} image={art.image} />
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
     </View>
   );
 }
 
-function ArtCard({title, artist, image}) {
+function ArtCard({ title, artist, image }) {
   return (
     <View style={artCardStyles.card}>
-      <Image source={{uri: image}} style={artCardStyles.image} />
+      <Image source={{ uri: image }} style={artCardStyles.image} />
       <View style={artCardStyles.textContainer}>
         <Text style={artCardStyles.title}>{title}</Text>
         <Text style={artCardStyles.artist}>{artist}</Text>
@@ -114,9 +115,8 @@ function ArtCard({title, artist, image}) {
   );
 }
 
-// Style utama
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: colors.darkGrey()},
+  container: { flex: 1, backgroundColor: colors.darkGrey() },
   header: {
     paddingHorizontal: 24,
     flexDirection: 'row',
@@ -136,7 +136,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 16,
   },
-  input: {flex: 1, paddingHorizontal: 16, height: 40, color: colors.white()},
+  input: {
+    flex: 1,
+    paddingHorizontal: 16,
+    height: 40,
+    color: colors.white(),
+  },
   searchButton: {
     backgroundColor: colors.accent(),
     alignItems: 'center',
@@ -158,10 +163,9 @@ const styles = StyleSheet.create({
     fontFamily: fontType['Pjs-SemiBold'],
     fontSize: 16,
   },
-  artList: {paddingHorizontal: 24, marginTop: 16},
+  artList: { paddingHorizontal: 24, marginTop: 16 },
 });
 
-// Style ArtCard
 const artCardStyles = StyleSheet.create({
   card: {
     marginBottom: 16,

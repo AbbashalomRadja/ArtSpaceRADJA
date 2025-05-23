@@ -1,12 +1,10 @@
-// App.jsx
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import {
-  createNativeStackNavigator,
-} from '@react-navigation/native-stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Feather';
 
+// Import screens
 import HomeScreen from './src/screen/HomeScreen';
 import DetailScreen from './src/screen/DetailScreen';
 import FormScreen from './src/screen/FormScreen';
@@ -14,6 +12,7 @@ import FormScreen from './src/screen/FormScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// Bottom Tab Navigator: Home & Form
 function MainTabs() {
   return (
     <Tab.Navigator
@@ -36,6 +35,7 @@ function MainTabs() {
   );
 }
 
+// Root App
 export default function App() {
   return (
     <NavigationContainer>
@@ -45,7 +45,10 @@ export default function App() {
           animation: 'slide_from_right',
         }}
       >
+        {/* Tab Bottom Navigation */}
         <Stack.Screen name="MainTabs" component={MainTabs} />
+        
+        {/* Navigasi ke detail (dari Home) */}
         <Stack.Screen name="Detail" component={DetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
