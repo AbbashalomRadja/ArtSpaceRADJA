@@ -7,7 +7,7 @@ import {
   Pressable,
   Alert,
 } from 'react-native';
-import { deleteArtwork } from '../api/artworks'; // 🔗 Tambahkan ini
+import firestore from '@react-native-firebase/firestore';
 
 const colors = {
   white: (o = 1) => `rgba(255, 255, 255, ${o})`,
@@ -30,7 +30,7 @@ export default function DetailScreen({ route, navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteArtwork(art.id);
+              await firestore().collection('artworks').doc(art.id).delete();
               Alert.alert('Sukses', 'Karya berhasil dihapus');
               navigation.goBack();
             } catch (error) {
@@ -44,8 +44,11 @@ export default function DetailScreen({ route, navigation }) {
   };
 
   const handleEdit = () => {
-    navigation.navigate('Form', { art }); // ➡️ Kirim data ke Form untuk diedit
-  };
+    navigation.navigate('MainTabs', {
+    screen: 'Form',
+    params: { art },
+  });
+};
 
   return (
     <View style={styles.container}>
@@ -76,17 +79,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
   },
-  image: { width: '100%', height: 300, borderRadius: 15 },
+  image: {
+    width: '100%',
+    height: 300,
+    borderRadius: 15,
+    marginBottom: 16,
+    resizeMode: 'cover',
+  },
   title: {
     color: colors.white(),
     fontSize: 24,
     fontWeight: 'bold',
-    marginTop: 16,
+    marginTop: 8,
   },
-  artist: { color: colors.white(0.7), fontSize: 18, marginTop: 8 },
+  artist: {
+    color: colors.white(0.7),
+    fontSize: 18,
+    marginTop: 4,
+  },
   buttonRow: {
     flexDirection: 'row',
-    marginTop: 20,
+    marginTop: 24,
     gap: 12,
   },
   button: {
@@ -94,7 +107,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 8,
   },
-  buttonText: { color: colors.white(), fontSize: 16 },
-  backButton: { marginTop: 24 },
-  backText: { color: colors.white(), fontSize: 16 },
+  buttonText: {
+    color: colors.white(),
+    fontSize: 16,
+  },
+  backButton: {
+    marginTop: 24,
+  },
+  backText: {
+    color: colors.white(),
+    fontSize: 16,
+  },
 });
