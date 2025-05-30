@@ -6,8 +6,10 @@ import {
   Button,
   StyleSheet,
   Alert,
+  Platform,
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
+import notifee from '@notifee/react-native';
 
 export default function FormScreen({ route, navigation }) {
   const art = route.params?.art;
@@ -16,6 +18,40 @@ export default function FormScreen({ route, navigation }) {
   const [title, setTitle] = useState(art?.title || '');
   const [artist, setArtist] = useState(art?.artist || '');
   const [image, setImage] = useState(art?.image || '');
+  const [channelId, setChannelId] = useState(null);
+
+  // Request permission dan buat channel saat pertama load
+  useEffect(() => {
+    async function prepareNotification() {
+      if (Platform.OS === 'android' && Platform.Version >= 33) {
+        const settings = await notifee.requestPermission();
+        if (!settings.authorizationStatus) {
+          Alert.alert('Izin notifikasi ditolak', 'Aplikasi membutuhkan izin notifikasi');
+        }
+      }
+      // Buat channel sekali saja
+      const id = await notifee.createChannel({
+        id: 'default',
+        name: 'Default Channel',
+      });
+      setChannelId(id);
+    }
+    prepareNotification();
+  }, []);
+
+  // Fungsi untuk menampilkan notifikasi
+  async function displayNotification(message) {
+    if (!channelId) return; // pastikan channel sudah dibuat
+
+    await notifee.displayNotification({
+      title: 'Notifikasi',
+      body: message,
+      android: {
+        channelId,
+        smallIcon: 'ic_launcher', // pastikan ada icon ini di project native
+      },
+    });
+  }
 
   const handleSubmit = async () => {
     if (!title || !artist || !image) {
@@ -30,10 +66,10 @@ export default function FormScreen({ route, navigation }) {
           artist,
           image,
         });
-        Alert.alert('Sukses', 'Karya berhasil diperbarui!');
+        await displayNotification('Karya berhasil diperbarui!');
       } else {
         await firestore().collection('artworks').add({ title, artist, image });
-        Alert.alert('Sukses', 'Karya berhasil ditambahkan!');
+        await displayNotification('Karya berhasil ditambahkan!');
       }
 
       navigation.goBack();
